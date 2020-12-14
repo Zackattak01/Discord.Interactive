@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -24,7 +25,9 @@ namespace Discord.Interactive
             : this(client as BaseSocketClient, defaultTimeout) { }
 
         
-        public async Task<SocketMessage> NextMessageAsync(TimeSpan? timeout = null){
+        public async Task<SocketMessage> NextMessageAsync(MessageCriteria criteria = null, TimeSpan? timeout = null){
+            criteria ??= MessageCriteria.Default;
+
             var socketMessageSource = new TaskCompletionSource<SocketMessage>();
 
             var timeoutTask = Task.Delay(timeout ?? DefaultTimeout);
@@ -36,7 +39,10 @@ namespace Discord.Interactive
                     return Task.CompletedTask;
                 }
 
-                socketMessageSource.SetResult(message);
+
+                if(criteria.Validate(message))
+                    socketMessageSource.SetResult(message);
+                    
                 return Task.CompletedTask;
             }
 
