@@ -24,7 +24,7 @@ namespace Discord.Interactive
             : this(client as BaseSocketClient, defaultTimeout) { }
 
         
-        public Task<SocketMessage> NextMessageAsync(TimeSpan? timeout = null){
+        public async Task<SocketMessage> NextMessageAsync(TimeSpan? timeout = null){
             var socketMessageSource = new TaskCompletionSource<SocketMessage>();
 
             var timeoutTask = Task.Delay(timeout ?? DefaultTimeout);
@@ -43,12 +43,12 @@ namespace Discord.Interactive
             try{
                 Client.MessageReceived += MessageHandler;
 
-                var firstTaskCompleted = Task.WhenAny(timeoutTask, socketMessageTask);
+                var firstTaskCompleted = await Task.WhenAny(timeoutTask, socketMessageTask).ConfigureAwait(false);
 
                 if(firstTaskCompleted == timeoutTask)
                     return null;
                 else
-                    return socketMessageTask;
+                    return await socketMessageTask.ConfigureAwait(false);
             }
             finally{
                 Client.MessageReceived -= MessageHandler;
