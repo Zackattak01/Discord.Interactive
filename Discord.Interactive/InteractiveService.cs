@@ -24,8 +24,9 @@ namespace Discord.Interactive
         public InteractiveService(DiscordShardedClient client, TimeSpan? defaultTimeout = null)
             : this(client as BaseSocketClient, defaultTimeout) { }
 
-        
-        public async Task<SocketMessage> NextMessageAsync(MessageCriteria criteria = null, TimeSpan? timeout = null){
+
+        public async Task<SocketMessage> NextMessageAsync(MessageCriteria criteria = null, TimeSpan? timeout = null)
+        {
             criteria ??= MessageCriteria.Default;
 
             var socketMessageSource = new TaskCompletionSource<SocketMessage>();
@@ -34,34 +35,66 @@ namespace Discord.Interactive
             var socketMessageTask = socketMessageSource.Task;
 
 
-            Task MessageHandler(SocketMessage message) {
-                if(message.Author.Id == Client.CurrentUser.Id){
+            Task MessageHandler(SocketMessage message)
+            {
+                if (message.Author.Id == Client.CurrentUser.Id)
+                {
                     return Task.CompletedTask;
                 }
 
 
-                if(criteria.Validate(message))
+                if (criteria.Validate(message))
                     socketMessageSource.SetResult(message);
-                    
+
                 return Task.CompletedTask;
             }
 
-            try{
+            try
+            {
                 Client.MessageReceived += MessageHandler;
 
                 var firstTaskCompleted = await Task.WhenAny(timeoutTask, socketMessageTask).ConfigureAwait(false);
 
-                if(firstTaskCompleted == timeoutTask)
+                if (firstTaskCompleted == timeoutTask)
                     return null;
                 else
                     return await socketMessageTask.ConfigureAwait(false);
             }
-            finally{
+            finally
+            {
                 Client.MessageReceived -= MessageHandler;
             }
         }
 
+        public async Task<SocketReaction> NextReactionAsync(TimeSpan? timout = null)
+        {
+            var socketReactionSource = new TaskCompletionSource<SocketReaction>();
 
+            var socketReactionTask = socketReactionSource.Task;
+            var timeoutTask = Task.Delay(timout ?? DefaultTimeout);
+
+            Task ReactionHandler(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
+            {
+                socketReactionSource.SetResult(reaction);
+                return Task.CompletedTask;
+            }
+
+            try
+            {
+                Client.ReactionAdded += ReactionHandler;
+
+                Task firstCompletedTask = await Task.WhenAny(socketReactionTask, timeoutTask).ConfigureAwait(false);
+
+                if (firstCompletedTask == timeoutTask)
+                    return null;
+                else
+                    return await socketReactionTask.ConfigureAwait(false);
+            }
+            finally
+            {
+                Client.ReactionAdded -= ReactionHandler;
+            }
+        }
 
     }
 }
