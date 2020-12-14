@@ -1,3 +1,3 @@
 # Discord.Interactive
 
-New (Discord.Net)[/discord-net/Discord.Net] interactive addons to replace the current one.
+New (Discord.Net)[/discord-net/Discord-Net] interactive addons to replace the current one.
