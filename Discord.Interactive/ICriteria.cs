@@ -1,11 +1,12 @@
 using System;
+using System.Threading.Tasks;
 using Discord.Commands;
 
 namespace Discord.Interactive
 {
     public interface ICriteria<T>
     {
-        bool Validate(T obj);
+        Task<bool> ValidateAsync(T obj);
     }
 
 }

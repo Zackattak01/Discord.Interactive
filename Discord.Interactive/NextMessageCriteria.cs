@@ -1,14 +1,12 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Discord.Commands;
 
 namespace Discord.Interactive
 {
-    public class NextMessageCriteria : ICriteria<IMessage>
+    public class NextMessageCriteria : UserChannelCriteria<IMessage>
     {
-        public ulong? RequiredUserId { get; }
-
-        public ulong? RequiredChannelId { get; }
 
         public NextMessageCriteria()
             : this(null, null) { }
@@ -17,32 +15,23 @@ namespace Discord.Interactive
             : this(context.Message.Author.Id, context.Channel.Id) { }
 
         internal NextMessageCriteria(ulong? userId, ulong? channelId)
-        {
-            RequiredUserId = userId;
-            RequiredChannelId = channelId;
-        }
+            : base(userId, channelId) { }
 
-        public virtual NextMessageCriteria EnsureUser(ulong id)
+        public override NextMessageCriteria EnsureUser(ulong id)
             => new NextMessageCriteria(id, RequiredChannelId);
 
-        public virtual NextMessageCriteria EnsureUser(IUser user)
+        public override NextMessageCriteria EnsureUser(IUser user)
             => new NextMessageCriteria(user.Id, RequiredChannelId);
 
-        public virtual NextMessageCriteria EnsureChannel(ulong id)
+        public override NextMessageCriteria EnsureChannel(ulong id)
             => new NextMessageCriteria(RequiredUserId, id);
 
-        public virtual NextMessageCriteria EnsureChannel(IChannel channel)
+        public override NextMessageCriteria EnsureChannel(IChannel channel)
             => new NextMessageCriteria(RequiredUserId, channel.Id);
 
-        public virtual bool Validate(IMessage message)
-        {
-            if (RequiredUserId is not null && message.Author.Id != RequiredUserId)
-                return false;
+        public override Task<bool> ValidateAsync(IMessage message)
+            => Task.FromResult(base.Validate(message.Author, message.Channel));
 
-            if (RequiredChannelId is not null && message.Channel.Id != RequiredChannelId)
-                return false;
 
-            return true;
-        }
     }
 }

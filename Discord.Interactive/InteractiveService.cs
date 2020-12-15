@@ -27,6 +27,7 @@ namespace Discord.Interactive
 
         public async Task<SocketMessage> NextMessageAsync(ICriteria<IMessage> criteria = null, TimeSpan? timeout = null)
         {
+            criteria ??= new NextMessageCriteria();
 
             var socketMessageSource = new TaskCompletionSource<SocketMessage>();
 
@@ -34,22 +35,14 @@ namespace Discord.Interactive
             var socketMessageTask = socketMessageSource.Task;
 
 
-            Task MessageHandler(SocketMessage message)
+            async Task MessageHandler(SocketMessage message)
             {
                 if (message.Author.Id == Client.CurrentUser.Id)
-                {
-                    return Task.CompletedTask;
-                }
+                    return;
 
-                if (criteria is not null)
-                {
-                    if (criteria.Validate(message))
-                        socketMessageSource.SetResult(message);
-                }
-                else
+
+                if (await criteria.ValidateAsync(message).ConfigureAwait(false))
                     socketMessageSource.SetResult(message);
-
-                return Task.CompletedTask;
             }
 
             try
@@ -69,17 +62,23 @@ namespace Discord.Interactive
             }
         }
 
-        public async Task<SocketReaction> NextReactionAsync(TimeSpan? timout = null)
+        public async Task<SocketReaction> NextReactionAsync(ICriteria<ReactionEventData> criteria = null, TimeSpan? timout = null)
         {
+            criteria ??= new NextReactionCriteria();
+
             var socketReactionSource = new TaskCompletionSource<SocketReaction>();
 
             var socketReactionTask = socketReactionSource.Task;
             var timeoutTask = Task.Delay(timout ?? DefaultTimeout);
 
-            Task ReactionHandler(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
+            async Task ReactionHandler(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
             {
-                socketReactionSource.SetResult(reaction);
-                return Task.CompletedTask;
+                if (reaction.UserId == Client.CurrentUser.Id)
+                    return;
+
+                if (await criteria.ValidateAsync(new ReactionEventData(cachedMessage, originChannel, reaction)).ConfigureAwait(false))
+                    socketReactionSource.SetResult(reaction);
+
             }
 
             try
