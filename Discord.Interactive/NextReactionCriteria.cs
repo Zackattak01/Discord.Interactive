@@ -43,7 +43,9 @@ namespace Discord.Interactive
 
         public NextReactionCriteria EnsureEmotes(IEnumerable<IEmote> emotes)
         {
-            var newReactions = Reactions.ToList();
+            var newReactions = Reactions?.ToList();
+            newReactions ??= new List<IEmote>();
+
             newReactions.AddRange(emotes);
             return new NextReactionCriteria(RequiredUserId, RequiredChannelId, newReactions);
         }
