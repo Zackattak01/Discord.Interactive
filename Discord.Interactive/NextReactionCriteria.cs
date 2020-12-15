@@ -23,7 +23,7 @@ namespace Discord.Interactive
         {
 
             Reactions = reactions?.ToList();
-            Reactions ??= new List<IEmote>();
+            //Reactions ??= new List<IEmote>();
         }
 
         public override NextReactionCriteria EnsureUser(ulong id)
@@ -50,7 +50,9 @@ namespace Discord.Interactive
 
         public NextReactionCriteria EnsureEmote(IEmote emote)
         {
-            var newReactions = Reactions.ToList();
+            var newReactions = Reactions?.ToList();
+            newReactions ??= new List<IEmote>();
+
             newReactions.Add(emote);
             return new NextReactionCriteria(RequiredUserId, RequiredChannelId, newReactions);
         }
@@ -61,13 +63,18 @@ namespace Discord.Interactive
         {
             var reaction = reactionData.Reaction;
 
-            if (!base.Validate(reaction.UserId, reaction.MessageId))
+            if (!base.Validate(reaction.UserId, reaction.Channel.Id))
                 return Task.FromResult(false);
 
-            var emoteMatched = Reactions.Any(x => x.Equals(reaction.Emote));
+            if (Reactions is not null)
+            {
+                var emoteMatched = Reactions.Any(x => x.Equals(reaction.Emote));
 
-            return Task.FromResult(emoteMatched);
+                return Task.FromResult(emoteMatched);
 
+            }
+
+            return Task.FromResult(true);
         }
 
     }

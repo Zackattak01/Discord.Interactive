@@ -15,6 +15,7 @@ namespace Discord.Interactive
 
         public InteractiveService(BaseSocketClient client, TimeSpan? defaultTimeout = null)
         {
+            Client = client;
             DefaultTimeout = defaultTimeout ?? TimeSpan.FromSeconds(15);
         }
 
