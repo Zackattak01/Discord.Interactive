@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -10,30 +11,31 @@ namespace Discord.Interactive
 {
     public class NextReactionCriteria : UserChannelCriteria<ReactionEventData>
     {
-        public IReadOnlyCollection<IEmote> Reactions { get; }
+        public IReadOnlyCollection<IEmote> RequiredReactions { get; }
+
+        public ulong? RequiredMessageId { get; }
 
         public NextReactionCriteria()
-            : this(null, null, null) { }
+            : this(null, null, null, null) { }
 
         public NextReactionCriteria(ICommandContext context)
             : base(context) { }
 
-        internal NextReactionCriteria(ulong? userId, ulong? channelId, IEnumerable<IEmote> reactions)
+        internal NextReactionCriteria(ulong? userId, ulong? channelId, ulong? messageId, IEnumerable<IEmote> reactions)
             : base(userId, channelId)
         {
-
-            Reactions = reactions?.ToList();
-            //Reactions ??= new List<IEmote>();
+            RequiredMessageId = messageId;
+            RequiredReactions = reactions?.ToList();
         }
 
         public override NextReactionCriteria EnsureUser(ulong id)
-            => new NextReactionCriteria(id, RequiredChannelId, Reactions);
+            => new NextReactionCriteria(id, RequiredMessageId, RequiredChannelId, RequiredReactions);
 
         public override NextReactionCriteria EnsureUser(IUser user)
             => EnsureUser(user.Id);
 
         public override NextReactionCriteria EnsureChannel(ulong id)
-            => new NextReactionCriteria(RequiredUserId, id, Reactions);
+            => new NextReactionCriteria(RequiredUserId, RequiredMessageId, id, RequiredReactions);
 
         public override NextReactionCriteria EnsureChannel(IChannel channel)
             => EnsureChannel(channel.Id);
@@ -43,23 +45,24 @@ namespace Discord.Interactive
 
         public NextReactionCriteria EnsureEmotes(IEnumerable<IEmote> emotes)
         {
-            var newReactions = Reactions?.ToList();
+            var newReactions = RequiredReactions?.ToList();
             newReactions ??= new List<IEmote>();
 
             newReactions.AddRange(emotes);
-            return new NextReactionCriteria(RequiredUserId, RequiredChannelId, newReactions);
+            return new NextReactionCriteria(RequiredUserId, RequiredMessageId, RequiredChannelId, newReactions);
         }
 
         public NextReactionCriteria EnsureEmote(IEmote emote)
         {
-            var newReactions = Reactions?.ToList();
+            var newReactions = RequiredReactions?.ToList();
             newReactions ??= new List<IEmote>();
 
             newReactions.Add(emote);
-            return new NextReactionCriteria(RequiredUserId, RequiredChannelId, newReactions);
+            return new NextReactionCriteria(RequiredUserId, RequiredMessageId, RequiredChannelId, newReactions);
         }
 
-
+        public NextReactionCriteria EnsureMessage(IMessage message)
+            => new NextReactionCriteria(RequiredUserId, message.Id, message.Channel.Id, RequiredReactions);
 
         public override Task<bool> ValidateAsync(ReactionEventData reactionData)
         {
@@ -68,9 +71,15 @@ namespace Discord.Interactive
             if (!base.Validate(reaction.UserId, reaction.Channel.Id))
                 return Task.FromResult(false);
 
-            if (Reactions is not null)
+            if (RequiredMessageId is not null)
             {
-                var emoteMatched = Reactions.Any(x => x.Equals(reaction.Emote));
+                if (reaction.MessageId != RequiredMessageId)
+                    return Task.FromResult(false);
+            }
+
+            if (RequiredReactions is not null)
+            {
+                var emoteMatched = RequiredReactions.Any(x => x.Equals(reaction.Emote));
 
                 return Task.FromResult(emoteMatched);
 
