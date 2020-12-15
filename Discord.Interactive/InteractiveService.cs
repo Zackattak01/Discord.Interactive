@@ -25,9 +25,8 @@ namespace Discord.Interactive
             : this(client as BaseSocketClient, defaultTimeout) { }
 
 
-        public async Task<SocketMessage> NextMessageAsync(MessageCriteria criteria = null, TimeSpan? timeout = null)
+        public async Task<SocketMessage> NextMessageAsync(ICriteria<IMessage> criteria = null, TimeSpan? timeout = null)
         {
-            criteria ??= MessageCriteria.Default;
 
             var socketMessageSource = new TaskCompletionSource<SocketMessage>();
 
@@ -42,8 +41,12 @@ namespace Discord.Interactive
                     return Task.CompletedTask;
                 }
 
-
-                if (criteria.Validate(message))
+                if (criteria is not null)
+                {
+                    if (criteria.Validate(message))
+                        socketMessageSource.SetResult(message);
+                }
+                else
                     socketMessageSource.SetResult(message);
 
                 return Task.CompletedTask;
@@ -95,6 +98,7 @@ namespace Discord.Interactive
                 Client.ReactionAdded -= ReactionHandler;
             }
         }
+
 
     }
 }
