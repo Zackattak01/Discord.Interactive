@@ -29,13 +29,13 @@ namespace Discord.Interactive
         }
 
         public override NextReactionCriteria EnsureUser(ulong id)
-            => new NextReactionCriteria(id, RequiredMessageId, RequiredChannelId, RequiredReactions);
+            => new NextReactionCriteria(id, RequiredChannelId, RequiredMessageId, RequiredReactions);
 
         public override NextReactionCriteria EnsureUser(IUser user)
             => EnsureUser(user.Id);
 
         public override NextReactionCriteria EnsureChannel(ulong id)
-            => new NextReactionCriteria(RequiredUserId, RequiredMessageId, id, RequiredReactions);
+            => new NextReactionCriteria(RequiredUserId, id, RequiredMessageId, RequiredReactions);
 
         public override NextReactionCriteria EnsureChannel(IChannel channel)
             => EnsureChannel(channel.Id);
@@ -49,7 +49,7 @@ namespace Discord.Interactive
             newReactions ??= new List<IEmote>();
 
             newReactions.AddRange(emotes);
-            return new NextReactionCriteria(RequiredUserId, RequiredMessageId, RequiredChannelId, newReactions);
+            return new NextReactionCriteria(RequiredUserId, RequiredChannelId, RequiredMessageId, newReactions);
         }
 
         public NextReactionCriteria EnsureEmote(IEmote emote)
@@ -58,11 +58,11 @@ namespace Discord.Interactive
             newReactions ??= new List<IEmote>();
 
             newReactions.Add(emote);
-            return new NextReactionCriteria(RequiredUserId, RequiredMessageId, RequiredChannelId, newReactions);
+            return new NextReactionCriteria(RequiredUserId, RequiredChannelId, RequiredMessageId, newReactions);
         }
 
         public NextReactionCriteria EnsureMessage(IMessage message)
-            => new NextReactionCriteria(RequiredUserId, message.Id, message.Channel.Id, RequiredReactions);
+            => new NextReactionCriteria(RequiredUserId, message.Channel.Id, message.Id, RequiredReactions);
 
         public override Task<bool> ValidateAsync(ReactionEventData reactionData)
         {
