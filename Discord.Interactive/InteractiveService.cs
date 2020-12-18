@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 
 namespace Discord.Interactive
@@ -63,14 +64,14 @@ namespace Discord.Interactive
             }
         }
 
-        public async Task<SocketReaction> NextReactionAsync(ICriteria<ReactionEventData> criteria = null, TimeSpan? timout = null)
+        public async Task<SocketReaction> NextReactionAsync(ICriteria<ReactionEventData> criteria = null, TimeSpan? timeout = null)
         {
             criteria ??= new NextReactionCriteria();
 
             var socketReactionSource = new TaskCompletionSource<SocketReaction>();
 
             var socketReactionTask = socketReactionSource.Task;
-            var timeoutTask = Task.Delay(timout ?? DefaultTimeout);
+            var timeoutTask = Task.Delay(timeout ?? DefaultTimeout);
 
             async Task ReactionHandler(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
             {
@@ -99,6 +100,25 @@ namespace Discord.Interactive
             }
         }
 
+        public void SendAndDelete(ICommandContext context, TimeSpan? timeout = null, string content = null,
+                                            bool isTTS = false, Embed embed = null, RequestOptions requestOptions = null,
+                                            AllowedMentions allowedMentions = null, MessageReference messageReference = null)
+        {
+            SendAndDelete(context.Channel, timeout, content, isTTS, embed, requestOptions, allowedMentions, messageReference);
+        }
 
+        public void SendAndDelete(IMessageChannel channel, TimeSpan? timeout = null, string content = null,
+                                        bool isTTS = false, Embed embed = null, RequestOptions requestOptions = null,
+                                        AllowedMentions allowedMentions = null, MessageReference messageReference = null)
+        {
+            Task.Run(async () =>
+            {
+                var message = await channel.SendMessageAsync(content, isTTS, embed, requestOptions, allowedMentions, messageReference);
+
+                await Task.Delay(timeout ?? DefaultTimeout);
+
+                await message.DeleteAsync();
+            });
+        }
     }
 }
