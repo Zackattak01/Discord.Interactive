@@ -115,9 +115,9 @@ namespace Discord.Interactive
             {
                 var message = await channel.SendMessageAsync(content, isTTS, embed, requestOptions, allowedMentions, messageReference).ConfigureAwait(false);
 
-                await Task.Delay(timeout ?? DefaultTimeout);
+                await Task.Delay(timeout ?? DefaultTimeout).ConfigureAwait(false);
 
-                await message.DeleteAsync();
+                await message.DeleteAsync().ConfigureAwait(false);
             });
         }
     }
