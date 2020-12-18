@@ -113,7 +113,7 @@ namespace Discord.Interactive
         {
             Task.Run(async () =>
             {
-                var message = await channel.SendMessageAsync(content, isTTS, embed, requestOptions, allowedMentions, messageReference);
+                var message = await channel.SendMessageAsync(content, isTTS, embed, requestOptions, allowedMentions, messageReference).ConfigureAwait(false);
 
                 await Task.Delay(timeout ?? DefaultTimeout);
 
