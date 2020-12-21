@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Discord;
+using Discord.Commands;
 
 namespace Name
 {
@@ -13,7 +14,6 @@ namespace Name
         public EmbedFooterBuilder DefaultFooter { get; private set; }
         public Color? DefaultColor { get; private set; }
         public int FieldsPerPage { get; private set; }
-        public bool IsBuilt { get; private set; }
 
         private int currentPage;
 
@@ -21,8 +21,6 @@ namespace Name
                                 Color? color = null, int? fieldsPerPage = null)
         {
             currentPage = -1;
-
-            IsBuilt = false;
 
             DefaultAuthor = author;
             DefaultFooter = footer;
@@ -105,6 +103,19 @@ namespace Name
 
             if (currentPage >= Pages.Count)
                 return null;
+
+            return Pages.ElementAt(currentPage);
+        }
+
+        internal Embed PreviousPage()
+        {
+            if (currentPage <= 0)
+            {
+                currentPage = 0;
+                return null;
+            }
+
+            currentPage--;
 
             return Pages.ElementAt(currentPage);
         }
