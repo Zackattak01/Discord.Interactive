@@ -99,10 +99,14 @@ namespace Name
 
         internal Embed NextPage()
         {
-            currentPage++;
-
-            if (currentPage >= Pages.Count)
+            if (currentPage >= Pages.Count - 1)
+            {
+                currentPage = Pages.Count - 1;
                 return null;
+            }
+
+
+            currentPage++;
 
             return Pages.ElementAt(currentPage);
         }
