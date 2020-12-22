@@ -4,11 +4,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Discord;
 using Discord.Commands;
+using Discord.Interactive;
 
 namespace Name
 {
     public class PaginatedMessage
     {
+        public Dictionary<IEmote, PaginatorAction> Emotes { get; }
         public IReadOnlyCollection<Embed> Pages { get; private set; }
         public EmbedAuthorBuilder DefaultAuthor { get; private set; }
         public EmbedFooterBuilder DefaultFooter { get; private set; }
@@ -21,6 +23,14 @@ namespace Name
                                 Color? color = null, int? fieldsPerPage = null)
         {
             currentPage = -1;
+
+            Emotes = new Dictionary<IEmote, PaginatorAction>();
+
+            Emotes.Add(new Emoji("\u23EE"), PaginatorAction.FirstPage);
+            Emotes.Add(new Emoji("\u25C0"), PaginatorAction.PreviousPage);
+            Emotes.Add(new Emoji("\u25B6"), PaginatorAction.NextPage);
+            Emotes.Add(new Emoji("\u23ED"), PaginatorAction.LastPage);
+            Emotes.Add(new Emoji("\u23F9"), PaginatorAction.Stop);
 
             DefaultAuthor = author;
             DefaultFooter = footer;
@@ -77,7 +87,7 @@ namespace Name
             return this;
         }
 
-        public PaginatedMessage AddPagesFromFields(IEnumerable<EmbedFieldBuilder> fields, int? fieldsPerPage = null)
+        public PaginatedMessage AddPages(IEnumerable<EmbedFieldBuilder> fields, int? fieldsPerPage = null)
         {
 
             var fieldList = fields.ToList();
@@ -105,7 +115,6 @@ namespace Name
                 return null;
             }
 
-
             currentPage++;
 
             return Pages.ElementAt(currentPage);
@@ -125,11 +134,17 @@ namespace Name
         }
 
         internal Embed FirstPage()
-            => Pages.ElementAt(0);
+        {
+            currentPage = 0;
+            return Pages.ElementAt(currentPage);
+        }
+
 
         internal Embed LastPage()
-            => Pages.ElementAt(Pages.Count - 1);
-
+        {
+            currentPage = Pages.Count - 1;
+            return Pages.ElementAt(currentPage);
+        }
         internal bool IsValidPaginatedMessage()
             => Pages.Count > 0;
     }

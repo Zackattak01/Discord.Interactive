@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Name;
 
 namespace Discord.Interactive
 {
@@ -14,10 +17,13 @@ namespace Discord.Interactive
 
         public TimeSpan DefaultTimeout { get; }
 
-        public InteractiveService(BaseSocketClient client, TimeSpan? defaultTimeout = null)
+        public TimeSpan DefaultPaginatorTimeout { get; }
+
+        public InteractiveService(BaseSocketClient client, TimeSpan? defaultTimeout = null, TimeSpan? defaultPaginatorTimeout = null)
         {
             Client = client;
             DefaultTimeout = defaultTimeout ?? TimeSpan.FromSeconds(15);
+            DefaultPaginatorTimeout = defaultPaginatorTimeout ?? TimeSpan.FromMinutes(2);
         }
 
         public InteractiveService(DiscordSocketClient client, TimeSpan? defaultTimeout = null)
@@ -119,6 +125,81 @@ namespace Discord.Interactive
 
                 await message.DeleteAsync().ConfigureAwait(false);
             });
+        }
+
+        public async Task SendPaginatedMessage(IMessageChannel channel, PaginatedMessage paginatedMessage, string content = null, TimeSpan? timeout = null)
+        {
+            if (!paginatedMessage.IsValidPaginatedMessage())
+            {
+                throw new Exception("Invalid Paginated Message!");
+            }
+
+            var message = await channel.SendMessageAsync(content, embed: paginatedMessage.FirstPage());
+
+            var emojis = paginatedMessage.Emotes.Keys.ToArray();
+
+            //this is slow and bound to hit a ratelimit.  I can probably do something about the ratelimit but it will still be slow
+            await message.AddReactionsAsync(emojis);
+
+            TaskCompletionSource completionSource = new TaskCompletionSource();
+
+            var completionTask = completionSource.Task;
+            Task timeoutTask = Task.Delay(timeout ?? DefaultPaginatorTimeout);
+
+            async Task ReactionChanged(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
+            {
+
+                var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
+
+                if (paginatedMessage.Emotes.TryGetValue(emote, out var action) && cachedMessage.Id == message.Id && reaction.UserId != Client.CurrentUser.Id)
+                {
+
+                    Embed newPage = null;
+                    switch (action)
+                    {
+                        case PaginatorAction.FirstPage:
+                            newPage = paginatedMessage.FirstPage();
+                            break;
+                        case PaginatorAction.PreviousPage:
+                            newPage = paginatedMessage.PreviousPage();
+                            break;
+                        case PaginatorAction.NextPage:
+                            newPage = paginatedMessage.NextPage();
+                            break;
+                        case PaginatorAction.LastPage:
+                            newPage = paginatedMessage.LastPage();
+                            break;
+                        case PaginatorAction.Stop:
+                            completionSource.SetResult();
+                            break;
+
+                    }
+
+                    if (newPage is not null)
+                    {
+                        await message.ModifyAsync(x => x.Embed = newPage);
+                    }
+
+                }
+            }
+
+            try
+            {
+                Client.ReactionAdded += ReactionChanged;
+                Client.ReactionRemoved += ReactionChanged;
+
+                var task = await Task.WhenAny(completionTask, timeoutTask);
+
+            }
+            finally
+            {
+                Client.ReactionAdded -= ReactionChanged;
+                Client.ReactionRemoved -= ReactionChanged;
+
+                await message.RemoveAllReactionsAsync();
+            }
+
+
         }
     }
 }

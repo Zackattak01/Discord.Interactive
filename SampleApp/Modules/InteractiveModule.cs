@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.Interactive;
+using Name;
 
 namespace SampleApp
 {
@@ -152,5 +154,21 @@ namespace SampleApp
 
             await ReplyAsync($"Recieved message: \"{reaction.Emote.Name}\"");
         }
+
+        [Command("paginator")]
+        public async Task PaginatorAsync()
+        {
+            List<EmbedFieldBuilder> builders = new List<EmbedFieldBuilder>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                builders.Add(new EmbedFieldBuilder().WithName($"foo {i}").WithValue($"bar {i}"));
+            }
+
+            PaginatedMessage pg = new PaginatedMessage().AddPages(builders, 3);
+
+            await Interactive.SendPaginatedMessage(Context.Channel, pg);
+        }
+
     }
 }
