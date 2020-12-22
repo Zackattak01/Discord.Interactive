@@ -6,7 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Interactive;
 
-namespace Name
+namespace Discord.Interactive
 {
     public class PaginatedMessage
     {

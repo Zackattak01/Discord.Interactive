@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Name;
 
 namespace Discord.Interactive
 {
@@ -139,82 +138,90 @@ namespace Discord.Interactive
             });
         }
 
-        public async Task SendPaginatedMessage(ICommandContext context, PaginatedMessage paginatedMessage, string content = null, TimeSpan? timeout = null)
+        public async Task<IUserMessage> SendPaginatedMessage(ICommandContext context, PaginatedMessage paginatedMessage, TimeSpan? timeout = null, string content = null,
+                                bool isTTS = false, RequestOptions requestOptions = null,
+                                AllowedMentions allowedMentions = null, MessageReference messageReference = null)
         {
             if (!paginatedMessage.IsValidPaginatedMessage())
             {
                 throw new Exception("Invalid Paginated Message!");
             }
 
-            var message = await context.Channel.SendMessageAsync(content, embed: paginatedMessage.FirstPage());
+            var message = await context.Channel.SendMessageAsync(content, isTTS, paginatedMessage.FirstPage(), requestOptions, allowedMentions, messageReference);
 
-            var emojis = paginatedMessage.Emotes.Keys.ToArray();
-
-            //this is slow and bound to hit a ratelimit.  I can probably do something about the ratelimit but it will still be slow
-            await message.AddReactionsAsync(emojis);
-
-            TaskCompletionSource completionSource = new TaskCompletionSource();
-
-            var completionTask = completionSource.Task;
-            Task timeoutTask = Task.Delay(timeout ?? DefaultPaginatorTimeout);
-
-            async Task ReactionChanged(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
+            //dont want to block the gateway
+            //I also dont want to move this to a serparate function
+            _ = Task.Run(async () =>
             {
+                var emojis = paginatedMessage.Emotes.Keys.ToArray();
 
-                var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
+                //this is slow and bound to hit a ratelimit.  I can probably do something about the ratelimit but it will still be slow
+                await message.AddReactionsAsync(emojis);
 
-                if (paginatedMessage.Emotes.TryGetValue(emote, out var action)
-                && cachedMessage.Id == message.Id
-                && reaction.UserId != Client.CurrentUser.Id
-                && reaction.UserId == context.User.Id)
+                TaskCompletionSource completionSource = new TaskCompletionSource();
+
+                var completionTask = completionSource.Task;
+                Task timeoutTask = Task.Delay(timeout ?? DefaultPaginatorTimeout);
+
+                async Task ReactionChanged(Cacheable<IUserMessage, ulong> cachedMessage, ISocketMessageChannel originChannel, SocketReaction reaction)
                 {
 
-                    Embed newPage = null;
-                    switch (action)
+                    var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
+
+                    if (paginatedMessage.Emotes.TryGetValue(emote, out var action)
+                    && cachedMessage.Id == message.Id
+                    && reaction.UserId != Client.CurrentUser.Id
+                    && reaction.UserId == context.User.Id)
                     {
-                        case PaginatorAction.FirstPage:
-                            newPage = paginatedMessage.FirstPage();
-                            break;
-                        case PaginatorAction.PreviousPage:
-                            newPage = paginatedMessage.PreviousPage();
-                            break;
-                        case PaginatorAction.NextPage:
-                            newPage = paginatedMessage.NextPage();
-                            break;
-                        case PaginatorAction.LastPage:
-                            newPage = paginatedMessage.LastPage();
-                            break;
-                        case PaginatorAction.Stop:
-                            completionSource.SetResult();
-                            break;
+
+                        Embed newPage = null;
+                        switch (action)
+                        {
+                            case PaginatorAction.FirstPage:
+                                newPage = paginatedMessage.FirstPage();
+                                break;
+                            case PaginatorAction.PreviousPage:
+                                newPage = paginatedMessage.PreviousPage();
+                                break;
+                            case PaginatorAction.NextPage:
+                                newPage = paginatedMessage.NextPage();
+                                break;
+                            case PaginatorAction.LastPage:
+                                newPage = paginatedMessage.LastPage();
+                                break;
+                            case PaginatorAction.Stop:
+                                completionSource.SetResult();
+                                break;
+
+                        }
+
+                        if (newPage is not null)
+                        {
+                            await message.ModifyAsync(x => x.Embed = newPage);
+                        }
 
                     }
+                }
 
-                    if (newPage is not null)
-                    {
-                        await message.ModifyAsync(x => x.Embed = newPage);
-                    }
+                try
+                {
+                    Client.ReactionAdded += ReactionChanged;
+                    Client.ReactionRemoved += ReactionChanged;
+
+                    var task = await Task.WhenAny(completionTask, timeoutTask);
 
                 }
-            }
+                finally
+                {
+                    Client.ReactionAdded -= ReactionChanged;
+                    Client.ReactionRemoved -= ReactionChanged;
 
-            try
-            {
-                Client.ReactionAdded += ReactionChanged;
-                Client.ReactionRemoved += ReactionChanged;
-
-                var task = await Task.WhenAny(completionTask, timeoutTask);
-
-            }
-            finally
-            {
-                Client.ReactionAdded -= ReactionChanged;
-                Client.ReactionRemoved -= ReactionChanged;
-
-                await message.RemoveAllReactionsAsync();
-            }
+                    await message.RemoveAllReactionsAsync();
+                }
+            });
 
 
+            return message;
         }
     }
 }
