@@ -147,7 +147,7 @@ namespace Discord.Interactive
                 throw new Exception("Invalid Paginated Message!");
             }
 
-            var message = await context.Channel.SendMessageAsync(content, isTTS, paginatedMessage.FirstPage(), requestOptions, allowedMentions, messageReference);
+            var message = await context.Channel.SendMessageAsync(content, isTTS, paginatedMessage.FirstPage(), requestOptions, allowedMentions, messageReference).ConfigureAwait(false);
 
             //dont want to block the gateway
             //I also dont want to move this to a serparate function
@@ -156,7 +156,7 @@ namespace Discord.Interactive
                 var emojis = paginatedMessage.Emotes.Keys.ToArray();
 
                 //this is slow and bound to hit a ratelimit.  I can probably do something about the ratelimit but it will still be slow
-                await message.AddReactionsAsync(emojis);
+                await message.AddReactionsAsync(emojis).ConfigureAwait(false);
 
                 TaskCompletionSource completionSource = new TaskCompletionSource();
 
@@ -197,7 +197,7 @@ namespace Discord.Interactive
 
                         if (newPage is not null)
                         {
-                            await message.ModifyAsync(x => x.Embed = newPage);
+                            await message.ModifyAsync(x => x.Embed = newPage).ConfigureAwait(false);
                         }
 
                     }
@@ -208,7 +208,7 @@ namespace Discord.Interactive
                     Client.ReactionAdded += ReactionChanged;
                     Client.ReactionRemoved += ReactionChanged;
 
-                    var task = await Task.WhenAny(completionTask, timeoutTask);
+                    var task = await Task.WhenAny(completionTask, timeoutTask).ConfigureAwait(false);
 
                 }
                 finally
@@ -216,7 +216,7 @@ namespace Discord.Interactive
                     Client.ReactionAdded -= ReactionChanged;
                     Client.ReactionRemoved -= ReactionChanged;
 
-                    await message.RemoveAllReactionsAsync();
+                    await message.RemoveAllReactionsAsync().ConfigureAwait(false);
                 }
             });
 
