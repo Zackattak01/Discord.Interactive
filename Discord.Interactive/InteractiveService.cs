@@ -70,6 +70,12 @@ namespace Discord.Interactive
             }
         }
 
+        public Task<SocketMessage> NextMessageAsync(ICommandContext context, TimeSpan? timeout = null)
+        {
+            var criteria = new NextMessageCriteria(context);
+            return NextMessageAsync(criteria, timeout);
+        }
+
         public async Task<SocketReaction> NextReactionAsync(ICriteria<ReactionEventData> criteria = null, TimeSpan? timeout = null)
         {
             criteria ??= new NextReactionCriteria();
@@ -104,6 +110,12 @@ namespace Discord.Interactive
             {
                 Client.ReactionAdded -= ReactionHandler;
             }
+        }
+
+        public Task<SocketReaction> NextReactionAsync(ICommandContext context, TimeSpan? timeout = null)
+        {
+            var criteria = new NextReactionCriteria(context);
+            return NextReactionAsync(criteria, timeout);
         }
 
         public void SendAndDelete(ICommandContext context, TimeSpan? timeout = null, string content = null,
