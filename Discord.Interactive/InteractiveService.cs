@@ -127,14 +127,14 @@ namespace Discord.Interactive
             });
         }
 
-        public async Task SendPaginatedMessage(IMessageChannel channel, PaginatedMessage paginatedMessage, string content = null, TimeSpan? timeout = null)
+        public async Task SendPaginatedMessage(ICommandContext context, PaginatedMessage paginatedMessage, string content = null, TimeSpan? timeout = null)
         {
             if (!paginatedMessage.IsValidPaginatedMessage())
             {
                 throw new Exception("Invalid Paginated Message!");
             }
 
-            var message = await channel.SendMessageAsync(content, embed: paginatedMessage.FirstPage());
+            var message = await context.Channel.SendMessageAsync(content, embed: paginatedMessage.FirstPage());
 
             var emojis = paginatedMessage.Emotes.Keys.ToArray();
 
@@ -151,7 +151,10 @@ namespace Discord.Interactive
 
                 var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
 
-                if (paginatedMessage.Emotes.TryGetValue(emote, out var action) && cachedMessage.Id == message.Id && reaction.UserId != Client.CurrentUser.Id)
+                if (paginatedMessage.Emotes.TryGetValue(emote, out var action)
+                && cachedMessage.Id == message.Id
+                && reaction.UserId != Client.CurrentUser.Id
+                && reaction.UserId == context.User.Id)
                 {
 
                     Embed newPage = null;
