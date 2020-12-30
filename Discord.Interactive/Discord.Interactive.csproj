@@ -2,10 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <RepositoryUrl>https://github.com/Zackattak01/Discord.Interactive</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <Version>2.3.0-rc2</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201220.5" />
   </ItemGroup>
+<PropertyGroup>
+  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  <PackageVersion>2.3.0-rc</PackageVersion>
+</PropertyGroup>
 
 </Project>

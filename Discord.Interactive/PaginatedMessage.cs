@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading.Channels;
 using Discord;
 using Discord.Commands;
 using Discord.Interactive;
@@ -11,16 +13,17 @@ namespace Discord.Interactive
     public class PaginatedMessage
     {
         public Dictionary<IEmote, PaginatorAction> Emotes { get; }
-        public IReadOnlyCollection<Embed> Pages { get; private set; }
+        public IReadOnlyCollection<EmbedBuilder> Pages { get; private set; }
         public EmbedAuthorBuilder DefaultAuthor { get; private set; }
         public EmbedFooterBuilder DefaultFooter { get; private set; }
         public Color? DefaultColor { get; private set; }
         public int FieldsPerPage { get; private set; }
+        public bool UsePageNumberForTitle { get; private set; }
 
         private int currentPage;
 
         public PaginatedMessage(EmbedAuthorBuilder author = null, EmbedFooterBuilder footer = null,
-                                Color? color = null, int? fieldsPerPage = null)
+                                Color? color = null, int? fieldsPerPage = null, bool usePageNumberAsTitle = true)
         {
             currentPage = -1;
 
@@ -36,8 +39,9 @@ namespace Discord.Interactive
             DefaultFooter = footer;
             FieldsPerPage = fieldsPerPage ?? 5;
             DefaultColor = color;
+            UsePageNumberForTitle = usePageNumberAsTitle;
 
-            Pages = new List<Embed>();
+            Pages = new List<EmbedBuilder>();
         }
 
         public PaginatedMessage AddPage(EmbedBuilder embed)
@@ -52,7 +56,7 @@ namespace Discord.Interactive
                 embed.Color = DefaultColor;
 
             var embeds = Pages.ToList();
-            embeds.Add(embed.Build());
+            embeds.Add(embed);
             Pages = embeds;
 
             return this;
@@ -117,7 +121,7 @@ namespace Discord.Interactive
 
             currentPage++;
 
-            return Pages.ElementAt(currentPage);
+            return GetAndFormatPageAt(currentPage);
         }
 
         internal Embed PreviousPage()
@@ -130,22 +134,32 @@ namespace Discord.Interactive
 
             currentPage--;
 
-            return Pages.ElementAt(currentPage);
+            return GetAndFormatPageAt(currentPage);
         }
 
         internal Embed FirstPage()
         {
             currentPage = 0;
-            return Pages.ElementAt(currentPage);
+            return GetAndFormatPageAt(currentPage);
         }
 
 
         internal Embed LastPage()
         {
             currentPage = Pages.Count - 1;
-            return Pages.ElementAt(currentPage);
+            return GetAndFormatPageAt(currentPage);
         }
         internal bool IsValidPaginatedMessage()
             => Pages.Count > 0;
+
+        private Embed GetAndFormatPageAt(int index)
+        {
+            var page = Pages.ElementAt(index);
+
+            if (UsePageNumberForTitle && page.Title is null)
+                page.WithTitle($"Page {index + 1}/{Pages.Count}");
+
+            return page.Build();
+        }
     }
 }

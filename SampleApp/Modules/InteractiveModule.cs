@@ -167,7 +167,7 @@ namespace SampleApp
 
             PaginatedMessage pg = new PaginatedMessage().AddPages(builders, 3);
 
-            await Interactive.SendPaginatedMessage(Context, pg, content: "String mode");
+            await Interactive.SendPaginatedMessage(Context, pg, content: "Regular Message Content!");
         }
 
     }
