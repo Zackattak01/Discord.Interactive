@@ -156,6 +156,7 @@ namespace Discord.Interactive
                 var emojis = paginatedMessage.Emotes.Keys.ToArray();
 
                 //this is slow and bound to hit a ratelimit.  I can probably do something about the ratelimit but it will still be slow
+                //P.S: run this on a different task because it is soooooo slow.
                 _ = Task.Run(async () => await message.AddReactionsAsync(emojis).ConfigureAwait(false));
 
                 TaskCompletionSource completionSource = new TaskCompletionSource();
