@@ -41,7 +41,7 @@ namespace Discord.Interactive
             => EnsureChannel(channel.Id);
 
         public NextReactionCriteria EnsureEmotes(params IEmote[] emotes)
-            => EnsureEmotes(emotes);
+            => EnsureEmotes(emotes.AsEnumerable());
 
         public NextReactionCriteria EnsureEmotes(IEnumerable<IEmote> emotes)
         {

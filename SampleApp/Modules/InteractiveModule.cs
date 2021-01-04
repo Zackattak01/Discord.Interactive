@@ -116,12 +116,13 @@ namespace SampleApp
         {
             await ReplyAsync("Waiting for the the next reaction with default critiera + emote (user & channel & emote guarantee)");
 
-            var emoji = new Emoji("\uD83D\uDC4D"); //:thumbsup:
-            var criteria = new NextReactionCriteria(Context).EnsureUser(user.Id).EnsureEmote(emoji);
+            var thumbsup = new Emoji("\uD83D\uDC4D"); //:thumbsup:
+            var XEmoji = new Emoji("\u274c");//:x:
+            var criteria = new NextReactionCriteria(Context).EnsureUser(user.Id).EnsureEmotes(thumbsup, XEmoji);
 
             var reaction = await Interactive.NextReactionAsync(criteria);
 
-            if (reaction is not null && (reaction.UserId != user.Id || reaction.Channel.Id != Context.Channel.Id || !reaction.Emote.Equals(emoji)))
+            if (reaction is not null && (reaction.UserId != user.Id || reaction.Channel.Id != Context.Channel.Id || !reaction.Emote.Equals(thumbsup)))
                 await ReplyAsync("NextReactionCriteria is broken!");
 
             if (reaction is null)
