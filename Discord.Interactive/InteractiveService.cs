@@ -169,6 +169,9 @@ namespace Discord.Interactive
 
                     var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
 
+                    if(emote is null)
+                        return;
+
                     if (paginatedMessage.Emotes.TryGetValue(emote, out var action)
                     && cachedMessage.Id == message.Id
                     && reaction.UserId != Client.CurrentUser.Id

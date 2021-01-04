@@ -4,9 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <RepositoryUrl>https://github.com/Zackattak01/Discord.Interactive</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
-    <Version>2.3.0-rc3</Version>
+    <Version>2.3.0-rc4</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageVersion>2.3.0-rc3</PackageVersion>
+    <PackageVersion>2.3.0-rc4</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
