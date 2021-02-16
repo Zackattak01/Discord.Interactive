@@ -149,6 +149,10 @@ namespace Discord.Interactive
 
             var message = await context.Channel.SendMessageAsync(content, isTTS, paginatedMessage.FirstPage(), requestOptions, allowedMentions, messageReference).ConfigureAwait(false);
 
+            //static paginators with one page dont need paginator controls
+            if (paginatedMessage.Pages.Count == 1)
+                return message;
+
             //dont want to block the gateway
             //I also dont want to move this to a serparate function
             _ = Task.Run(async () =>
@@ -169,7 +173,7 @@ namespace Discord.Interactive
 
                     var emote = paginatedMessage.Emotes.Keys.FirstOrDefault(x => x.Name == reaction.Emote.Name);
 
-                    if(emote is null)
+                    if (emote is null)
                         return;
 
                     if (paginatedMessage.Emotes.TryGetValue(emote, out var action)
