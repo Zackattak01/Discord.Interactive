@@ -28,16 +28,16 @@ namespace Discord.Interactive
             RequiredReactions = reactions?.ToList();
         }
 
-        public override NextReactionCriteria EnsureUser(ulong id)
+        public override UserChannelCriteria<ReactionEventData> EnsureUser(ulong id)
             => new NextReactionCriteria(id, RequiredChannelId, RequiredMessageId, RequiredReactions);
 
-        public override NextReactionCriteria EnsureUser(IUser user)
+        public override UserChannelCriteria<ReactionEventData> EnsureUser(IUser user)
             => EnsureUser(user.Id);
 
-        public override NextReactionCriteria EnsureChannel(ulong id)
+        public override UserChannelCriteria<ReactionEventData> EnsureChannel(ulong id)
             => new NextReactionCriteria(RequiredUserId, id, RequiredMessageId, RequiredReactions);
 
-        public override NextReactionCriteria EnsureChannel(IChannel channel)
+        public override UserChannelCriteria<ReactionEventData> EnsureChannel(IChannel channel)
             => EnsureChannel(channel.Id);
 
         public NextReactionCriteria EnsureEmotes(params IEmote[] emotes)

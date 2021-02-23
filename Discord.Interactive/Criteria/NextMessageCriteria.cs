@@ -17,16 +17,16 @@ namespace Discord.Interactive
         internal NextMessageCriteria(ulong? userId, ulong? channelId)
             : base(userId, channelId) { }
 
-        public override NextMessageCriteria EnsureUser(ulong id)
+        public override UserChannelCriteria<IMessage> EnsureUser(ulong id)
             => new NextMessageCriteria(id, RequiredChannelId);
 
-        public override NextMessageCriteria EnsureUser(IUser user)
+        public override UserChannelCriteria<IMessage> EnsureUser(IUser user)
             => new NextMessageCriteria(user.Id, RequiredChannelId);
 
-        public override NextMessageCriteria EnsureChannel(ulong id)
+        public override UserChannelCriteria<IMessage> EnsureChannel(ulong id)
             => new NextMessageCriteria(RequiredUserId, id);
 
-        public override NextMessageCriteria EnsureChannel(IChannel channel)
+        public override UserChannelCriteria<IMessage> EnsureChannel(IChannel channel)
             => new NextMessageCriteria(RequiredUserId, channel.Id);
 
         public override Task<bool> ValidateAsync(IMessage message)
